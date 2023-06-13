@@ -11,6 +11,10 @@ RUN pip install -r requirements.txt
 # Copy the Flask app code into the container
 COPY app.py .
 
+# Copy the HTML templates and static files
+COPY templates templates
+COPY static static
+
 # Install Gunicorn
 RUN pip install gunicorn
 
