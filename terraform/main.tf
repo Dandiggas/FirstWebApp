@@ -21,6 +21,17 @@ resource "aws_ecs_cluster" "dan" {
   }
 }
 
+resource "aws_ecs_cluster_capacity_providers" "dan_capacity_provider" {
+  cluster_name = aws_ecs_cluster.dan.name
+
+  capacity_providers = ["${aws_ecs_capacity_provider.test.name}"]
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = "${aws_ecs_capacity_provider.test.name}"
+  }
+}
 
 resource "aws_ecs_capacity_provider" "test" {
   name = "test"
@@ -37,12 +48,45 @@ resource "aws_ecs_capacity_provider" "test" {
   }
 
 }
+
+data "aws_iam_policy_document" "ecs_agent" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "ecs_agent" {
+  name               = "ecs-agent"
+  assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
+}
+
+
+resource "aws_iam_role_policy_attachment" "ecs_agent" {
+  role       = aws_iam_role.ecs_agent.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+
+resource "aws_iam_instance_profile" "ecs_agent" {
+  name = "ecs-agent"
+  role = aws_iam_role.ecs_agent.name
+}
 resource "aws_launch_template" "test" {
-  name_prefix   = "test"
+  name_prefix = "test"
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_agent.name
+  }
+
   image_id      = "ami-00b1c9efd33fda707"
   instance_type = "t3.large"
-
 }
+
 
 resource "aws_autoscaling_group" "bar" {
   availability_zones = ["eu-west-1a"]
