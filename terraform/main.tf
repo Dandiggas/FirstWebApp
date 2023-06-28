@@ -12,6 +12,22 @@ provider "aws" {
   region = "eu-west-1"
 }
 
+
+data "aws_subnet" "default_a" {
+  vpc_id                  = data.aws_vpc.default.id
+  availability_zone       = "eu-west-1a"
+}
+
+data "aws_subnet" "default_b" {
+  vpc_id                  = data.aws_vpc.default.id
+  availability_zone       = "eu-west-1b"
+}
+
+data "aws_subnet" "default_c" {
+  vpc_id                  = data.aws_vpc.default.id
+  availability_zone       = "eu-west-1c"
+}
+
 resource "aws_ecs_cluster" "dan" {
   name = "diggas"
 
@@ -85,6 +101,14 @@ resource "aws_launch_template" "test" {
 
   image_id      = "ami-00b1c9efd33fda707"
   instance_type = "t3.large"
+
+
+user_data = base64encode(
+    <<-EOF
+      #!/bin/bash
+      echo "ECS_CLUSTER=diggas" >> /etc/ecs/ecs.config
+    EOF
+  )
 }
 
 
@@ -138,4 +162,18 @@ resource "aws_ecs_service" "test_service" {
 
   desired_count = 1
 }
+
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_route_table" "default" {
+  vpc_id = data.aws_vpc.default.id
+  filter {
+    name   = "association.main"
+    values = ["true"]
+  }
+}
+
 
