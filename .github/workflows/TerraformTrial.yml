@@ -38,4 +38,29 @@ jobs:
         run: terraform plan -no-color
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        id: apply
+        run: terraform apply -auto-approve || echo "Terraform apply failed" && exit 1
+
+  destroy:
+    name: "Destroy Infrastructure"
+    needs: terraform
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.5.1
+          terraform_wrapper: false
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+
