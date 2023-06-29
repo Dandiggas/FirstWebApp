@@ -24,7 +24,7 @@
 #    See the documentation for each action used below for the recommended IAM policies for this IAM user,
 #    and best practices on handling the access key credentials.
 
-name: Deploy to Amazon ECS
+name: Deploy to Amazon ECR
 
 on:
   push:
@@ -47,7 +47,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v2 # More information on this action can be found below in the 'AWS Credentials' section
       with:
         role-to-assume: arn:aws:iam::961735464591:role/github.aws
-        aws-region: us-east-1
+        aws-region: global
     - name: Login to Amazon ECR Public
       id: login-ecr-public
       uses: aws-actions/amazon-ecr-login@v1
