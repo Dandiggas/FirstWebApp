@@ -12,22 +12,6 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-
-data "aws_subnet" "default_a" {
-  vpc_id                  = data.aws_vpc.default.id
-  availability_zone       = "eu-west-1a"
-}
-
-data "aws_subnet" "default_b" {
-  vpc_id                  = data.aws_vpc.default.id
-  availability_zone       = "eu-west-1b"
-}
-
-data "aws_subnet" "default_c" {
-  vpc_id                  = data.aws_vpc.default.id
-  availability_zone       = "eu-west-1c"
-}
-
 resource "aws_ecs_cluster" "dan" {
   name = "diggas"
 
@@ -45,7 +29,7 @@ resource "aws_ecs_cluster_capacity_providers" "dan_capacity_provider" {
   default_capacity_provider_strategy {
     base              = 1
     weight            = 100
-    capacity_provider = "${aws_ecs_capacity_provider.test.name}"
+    capacity_provider = aws_ecs_capacity_provider.test.name
   }
 }
 
@@ -65,6 +49,28 @@ resource "aws_ecs_capacity_provider" "test" {
 
 }
 
+
+
+resource "aws_iam_role" "ecs_agent" {
+  name               = "ecs-agent"
+  assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
+}
+resource "aws_iam_role" "execution_role" {
+  name = "execution-ecs-ec2-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
 data "aws_iam_policy_document" "ecs_agent" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -76,17 +82,20 @@ data "aws_iam_policy_document" "ecs_agent" {
   }
 }
 
-resource "aws_iam_role" "ecs_agent" {
-  name               = "ecs-agent"
-  assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
-}
-
-
 resource "aws_iam_role_policy_attachment" "ecs_agent" {
   role       = aws_iam_role.ecs_agent.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
+resource "aws_iam_instance_profile" "instance_profile" {
+  name = "comeon-instanceprofile"
+  role = aws_iam_role.execution_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_permissions" {
+  role       = aws_iam_role.execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
 
 resource "aws_iam_instance_profile" "ecs_agent" {
   name = "ecs-agent"
@@ -99,11 +108,11 @@ resource "aws_launch_template" "test" {
     name = aws_iam_instance_profile.ecs_agent.name
   }
 
-  image_id      = "ami-00b1c9efd33fda707"
+  image_id      = "ami-06c220b6085f39c6c"
   instance_type = "t3.large"
 
 
-user_data = base64encode(
+  user_data = base64encode(
     <<-EOF
       #!/bin/bash
       echo "ECS_CLUSTER=diggas" >> /etc/ecs/ecs.config
