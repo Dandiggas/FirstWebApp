@@ -34,7 +34,6 @@ env:
   AWS_REGION: us-east-1                   # set this to your preferred AWS region, e.g. us-west-1
   ECR_REPOSITORY: firstwebsite           # set this to your Amazon ECR repository name
 
-
 permissions:
   contents: read
 
@@ -64,7 +63,8 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
-        ECR_REGISTRY: 961735464591.dkr.ecr.us-east-1.amazonaws.com
+        ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        ECR_REGISTRY: ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
         IMAGE_TAG: latest
       run: |
         # Build a docker container and
@@ -73,4 +73,3 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
