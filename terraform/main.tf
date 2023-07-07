@@ -5,11 +5,20 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+
+  backend "s3" {
+    bucket         = "firstwebsite-tf-state-backend"
+    key            = "tf-infra/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-locking"
+
+  }
 }
 
 # Configure the AWS Provider
 provider "aws" {
-  region = "eu-west-1"
+  region = "us-east-1"
 }
 
 resource "aws_ecs_cluster" "dan" {
@@ -55,6 +64,7 @@ resource "aws_iam_role" "ecs_agent" {
   name               = "ecs-agent"
   assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
 }
+
 resource "aws_iam_role" "execution_role" {
   name = "execution-ecs-ec2-role"
   assume_role_policy = jsonencode({
@@ -82,10 +92,11 @@ data "aws_iam_policy_document" "ecs_agent" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_agent" {
+resource "aws_iam_role_policy_attachment" "ecs_agent_permissions" {
   role       = aws_iam_role.ecs_agent.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
+
 
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "comeon-instanceprofile"
@@ -108,7 +119,7 @@ resource "aws_launch_template" "test" {
     name = aws_iam_instance_profile.ecs_agent.name
   }
 
-  image_id      = "ami-06c220b6085f39c6c"
+  image_id      = "ami-0bf5ac026c9b5eb88"
   instance_type = "t3.large"
 
 
@@ -122,7 +133,7 @@ resource "aws_launch_template" "test" {
 
 
 resource "aws_autoscaling_group" "bar" {
-  availability_zones = ["eu-west-1a"]
+  availability_zones = ["us-east-1a"]
   desired_capacity   = 1
   max_size           = 1
   min_size           = 1
@@ -184,5 +195,6 @@ data "aws_route_table" "default" {
     values = ["true"]
   }
 }
+
 
 
