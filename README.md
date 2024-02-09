@@ -49,11 +49,9 @@ To run this project, you will need to have Docker, AWS CLI, and Terraform instal
 ## Contributing
 Contributions are welcome. Please adhere to the standard fork, branch, and pull request workflow.
 
-## License
-[Specify License]
 
 ## Contact
-For any inquiries or contributions, please contact [Your Name] at [Your Email].
+For any inquiries or contributions, please contact Daniel Adekugbe at Danieladekugbe@gmail.com
 
 ---
 
